@@ -53,8 +53,19 @@ jobs:
       - name: Check spotless
         run: ./gradlew spotlessCheck --init-script gradle/init.gradle.kts --no-configuration-cache
 
-      - name: Build build debug type and flavor permutations
-        run: ./gradlew :app:assembleDebug
+      - name: Setup GMD
+        run: ./gradlew :macrobenchmark:pixel6Api33Setup
+          --info
+          -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
+          -Pandroid.testoptions.manageddevices.emulator.gpu="swiftshader_indirect"
+
+      - name: Build all build type and flavor permutations
+        run: ./gradlew :app:assemble :macrobenchmark:assemble -Pandroidx.baselineprofile.skipgeneration
+          -Pandroid.testoptions.manageddevices.emulator.gpu="swiftshader_indirect"
+          -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
+          -Pandroid.experimental.androidTest.numManagedDeviceShards=1
+          -Pandroid.experimental.testOptions.managedDevices.maxConcurrentDevices=1
+          -Pandroid.experimental.testOptions.managedDevices.setupTimeoutMinutes=5
 
       - name: Upload build outputs (APKs)
         uses: actions/upload-artifact@v4
@@ -142,7 +153,7 @@ jobs:
       - name: Display local test coverage (only API 34)
         if: matrix.api-level == 34
         id: jacoco
-        uses: madrapps/jacoco-report@v1.7.0
+        uses: madrapps/jacoco-report@v1.7.1
         with:
           title: Combined test coverage report
           min-coverage-overall: 40
